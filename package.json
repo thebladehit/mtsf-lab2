@@ -1,0 +1,22 @@
+{
+  "name": "mtsf-lab2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebladehit/mtsf-lab2.git"
+  },
+  "author": "thebladehit",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thebladehit/mtsf-lab2/issues"
+  },
+  "homepage": "https://github.com/thebladehit/mtsf-lab2#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
