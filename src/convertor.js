@@ -42,6 +42,10 @@ const regExpesError = [
   /(^|\s)`\w+/
 ];
 
+const availableModes = ['html', 'ansi'];
+
+const isValidMode = (mode) => availableModes.includes(mode);
+
 const addParagrapgs = (data) => {
   data = '<p>' + data;
   let idx;
@@ -69,6 +73,11 @@ const isInvalidTags = (data) => {
 const deleteInternalSymbols = (data, symbols) => data.split(' ').map(word => word.replace(symbols, '')).join(' ');
 
 const convert = (data, mode) => {
+  if (!isValidMode(mode)) {
+    const err = new Error('Error: invalid mode type');
+    err.code = 406;
+    throw err;
+  }
   for (const regExp of regExpes) {
     let match;
     while ((match = data.match(regExp.regExp)) != null) {

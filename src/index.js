@@ -8,14 +8,21 @@ const convertMdToHtml = async (filePath) => {
   try {
     const absolutePath = path.join(__dirname, filePath);
     const data = await readFile(absolutePath);
-    const convertedData = convert(data);
-    const outPath = process.argv[process.argv.length - 1].split('=')[1];
+    let outPath;
+    let format;
+    if (process.argv.length > 2) {
+      for (let i = 2; i < process.argv.length; i++) {
+        const arg = process.argv[i];
+        if (arg.startsWith('--out=')) outPath = arg.split('=')[1];
+        else if (arg.startsWith('--format=')) format = arg.split('=')[1];
+      }
+    }
+    format = outPath ? format ? format : 'html' : format ? format : 'ansi';
+    const convertedData = convert(data, format);
     if (outPath) {
       const absOutPath = path.resolve(__dirname, outPath);
       await writeFile(absOutPath, convertedData);
-    } else {
-      console.log(convertedData);
-    }
+    } else console.log(convertedData);
   } catch (err) {
     console.log(err);
     process.exit(err.code)
