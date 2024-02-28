@@ -1,110 +1,102 @@
 const { convert } = require('../src/convertor');
 
-describe('paragraph', () => {
-  test('Wrap text', () => {
-    expect(convert('hello', 'html')).toBe('<p>hello</p>');
-  });
+const runTest = (mode, tests) => {
+  for (const [description, value] of Object.entries(tests)) {
+    describe(description, () => {
+      for (const [testName, testValue] of Object.entries(value)) {
+        test(testName, () => {
+          expect(convert(testValue.input, mode)).toBe(testValue.expected);
+        });
+      }
+    });
+  }
 
-  test('Wrap different paragraphs', () => {
-    const input = `hello
-
-    world`;
-    const expected = `<p>hello</p><p>
-    world</p>`;
-    expect(convert(input, 'html')).toBe(expected);
+  describe('Errors', () => {
+    test('nested tags', () => {
+      expect(() => convert('**_hello_**', mode)).toThrow('Error: invalid markdown nested tags');
+    });
+  
+    test('open tag', () => {
+      expect(() => convert('**hello', mode)).toThrow('Error: invalid markdown not finished tags');
+    });
   });
+}
+
+describe('HTML', () => {
+  const tests = {
+    paragraph: {
+      'Wrap text': {input: 'hello', expected: '<p>hello</p>'},
+      'Wrap different paragraphs': {input: `hello
+
+      world`, expected: `<p>hello</p><p>
+      world</p>`},
+    }, 
+    '**word**': {
+      'Find **word** patern': {input: '**hello**', expected: '<p><b>hello</b></p>'},
+      'Find **word word** patern': {input: '**hello world**', expected: '<p><b>hello world</b></p>'},
+      'Not interpret ** single symbol': {input: '**', expected: '<p>**</p>'},
+      'Not interpret ** single symbol in others patterns': {input: '`**`', expected: '<p><tt>**</tt></p>'},
+      'Not interpret ** in word snake_case': {input: 'snake**case', expected: '<p>snake**case</p>'},
+    },
+    '_word_': {
+      'Find _word_ patern': {input: '_hello_', expected: '<p><i>hello</i></p>'},
+      'Find _word word_ patern': {input: '_hello world_', expected: '<p><i>hello world</i></p>'},
+      'Not interpret _ single symbol': {input: '_', expected: '<p>_</p>'},
+      'Not interpret _ single symbol in others patterns': {input: '`_`', expected: '<p><tt>_</tt></p>'},
+      'Not interpret _ in word snake_case': {input: 'snake_case', expected: '<p>snake_case</p>'},
+    },
+    '`word`': {
+      'Find `word` patern': {input: '`hello`', expected: '<p><tt>hello</tt></p>'},
+      'Find `word word` patern': {input: '`hello world`', expected: '<p><tt>hello world</tt></p>'},
+      'Not interpret ` single symbol': {input: '`', expected: '<p>`</p>'},
+      'Not interpret ` single symbol in others patterns': {input: '```', expected: '<p><tt>`</tt></p>'},
+      'Not interpret ` in word snake_case': {input: 'snake`case', expected: '<p>snake`case</p>'},
+    },
+    '```word```': {
+      'Find ```word``` patern': {input: '```hello```', expected: '<p><pre>hello</pre></p>'},
+      'Find ```word word``` patern': {input: '```hello world```', expected: '<p><pre>hello world</pre></p>'},
+      'Not interpret other tags inside': {input: '```**hello** _world_```', expected: '<p><pre>**hello** _world_</pre></p>'},
+    }
+  };
+  runTest('html', tests);
 });
 
-describe('**word**', () => {
-  test('Find **word** patern', () => {
-    expect(convert('**hello**', 'html')).toBe('<p><b>hello</b></p>');
-  });
-  
-  test('Find **word word** patern', () => {
-    expect(convert('**hello world**', 'html')).toBe('<p><b>hello world</b></p>');
-  });
+describe('ANSI', () => {
+  const tests = {
+    paragraph: {
+      'Wrap text': {input: 'hello', expected: 'hello'},
+      'Wrap different paragraphs': {input: `hello
 
-  test('Not interpret ** single symbol', () => {
-    expect(convert('**', 'html')).toBe('<p>**</p>');
-  });
-  
-  test('Not interpret ** single symbol in others patterns', () => {
-    expect(convert('`**`', 'html')).toBe('<p><tt>**</tt></p>');
-  });
-  
-  test('Not interpret ** in word snake_case', () => {
-    expect(convert('snake**case', 'html')).toBe('<p>snake**case</p>');
-  });
-});
+      world`, expected: `hello
 
-
-describe('_word_', () => {
-  test('Find _word_ patern', () => {
-    expect(convert('_hello_', 'html')).toBe('<p><i>hello</i></p>');
-  });
-  
-  test('Find _word word_ patern', () => {
-    expect(convert('_hello world_', 'html')).toBe('<p><i>hello world</i></p>');
-  });
-
-  test('Not interpret _ single symbol', () => {
-    expect(convert('_', 'html')).toBe('<p>_</p>');
-  });
-  
-  test('Not interpret _ single symbol in others patterns', () => {
-    expect(convert('`_`', 'html')).toBe('<p><tt>_</tt></p>');
-  });
-  
-  test('Not interpret _ in word snake_case', () => {
-    expect(convert('snake_case', 'html')).toBe('<p>snake_case</p>');
-  });
-});
-
-
-describe('`word`', () => {
-  test('Find `word` patern', () => {
-    expect(convert('`hello`', 'html')).toBe('<p><tt>hello</tt></p>');
-  });
-  
-  test('Find `word word` patern', () => {
-    expect(convert('`hello world`', 'html')).toBe('<p><tt>hello world</tt></p>');
-  });
-
-  test('Not interpret ` single symbol', () => {
-    expect(convert('`', 'html')).toBe('<p>`</p>');
-  });
-  
-  test('Not interpret _ single symbol in others patterns', () => {
-    expect(convert('```', 'html')).toBe('<p><tt>`</tt></p>');
-  });
-  
-  test('Not interpret ` in word snake_case', () => {
-    expect(convert('snake`case', 'html')).toBe('<p>snake`case</p>');
-  });
-});
-
-
-describe('```word```', () => {
-  test('Find ```word``` patern', () => {
-    expect(convert('```hello```', 'html')).toBe('<p><pre>hello</pre></p>');
-  });
-
-  test('Find ```word word``` patern', () => {
-    expect(convert('```hello world```', 'html')).toBe('<p><pre>hello world</pre></p>');
-  });
-
-  test('Not interpret other tags inside', () => {
-    expect(convert('```**hello** _world_```', 'html')).toBe('<p><pre>**hello** _world_</pre></p>');
-  });
-});
-
-
-describe('Errors', () => {
-  test('nested tags', () => {
-    expect(() => convert('**_hello_**', 'html')).toThrow('Error: invalid markdown nested tags');
-  });
-
-  test('open tag', () => {
-    expect(() => convert('**hello', 'html')).toThrow('Error: invalid markdown not finished tags');
-  });
+      world`},
+    }, 
+    '**word**': {
+      'Find **word** patern': {input: '**hello**', expected: '\x1B[1mhello\x1B[22m'},
+      'Find **word word** patern': {input: '**hello world**', expected: '\x1B[1mhello world\x1B[22m'},
+      'Not interpret ** single symbol': {input: '**', expected: '**'},
+      'Not interpret ** single symbol in others patterns': {input: '`**`', expected: '\x1B[7m**\x1B[27m'},
+      'Not interpret ** in word snake_case': {input: 'snake**case', expected: 'snake**case'},
+    },
+    '_word_': {
+      'Find _word_ patern': {input: '_hello_', expected: '\x1B[3mhello\x1B[23m'},
+      'Find _word word_ patern': {input: '_hello world_', expected: '\x1B[3mhello world\x1B[23m'},
+      'Not interpret _ single symbol': {input: '_', expected: '_'},
+      'Not interpret _ single symbol in others patterns': {input: '`_`', expected: '\x1B[7m_\x1B[27m'},
+      'Not interpret _ in word snake_case': {input: 'snake_case', expected: 'snake_case'},
+    },
+    '`word`': {
+      'Find `word` patern': {input: '`hello`', expected: '\x1B[7mhello\x1B[27m'},
+      'Find `word word` patern': {input: '`hello world`', expected: '\x1B[7mhello world\x1B[27m'},
+      'Not interpret ` single symbol': {input: '`', expected: '`'},
+      'Not interpret ` single symbol in others patterns': {input: '```', expected: '\x1B[7m`\x1B[27m'},
+      'Not interpret ` in word snake_case': {input: 'snake`case', expected: 'snake`case'},
+    },
+    '```word```': {
+      'Find ```word``` patern': {input: '```hello```', expected: '\x1B[7mhello\x1B[27m'},
+      'Find ```word word``` patern': {input: '```hello world```', expected: '\x1B[7mhello world\x1B[27m'},
+      'Not interpret other tags inside': {input: '```**hello** _world_```', expected: '\x1B[7m**hello** _world_\x1B[27m'},
+    }
+  };
+  runTest('ansi', tests);
 });
