@@ -29,8 +29,6 @@ const convertMdToHtml = async (filePath) => {
   }
 };
 
-const useless = () => {};
-
 process.stdin.setEncoding('utf8');
 process.stdout.write('File name: ');
 process.stdin.on('data', (data) => {
