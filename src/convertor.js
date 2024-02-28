@@ -5,8 +5,8 @@ const regExpes = [
     regExp: /```.+?```/s,
     length: 3,
     symbol: '```',
-    changeToStart: '<pre>',
-    changeToEnd: '</pre>',
+    changeToStart: { ansi: '\x1B[7m', html: '<pre>' },
+    changeToEnd: { ansi: '\x1B[27m', html: '</pre>' },
     nestedTag: true,
     fn: (data) => data.split(' ').map(word => '~a' + word).join(' ')
   },
@@ -14,24 +14,24 @@ const regExpes = [
     regExp: /([^A-Za-z0-9_\u0400-\u04FF]|^)\*\*.+?\*\*([^A-Za-z0-9_\u0400-\u04FF]|$)/u,
     length: 2,
     symbol: '**',
-    changeToStart: '<b>',
-    changeToEnd: '</b>',
+    changeToStart: { ansi: '\x1B[1m', html: '<b>' },
+    changeToEnd: { ansi: '\x1B[22m', html: '</b>' },
     nestedTag: false
   },
   {
     regExp: /([^A-Za-z0-9_\u0400-\u04FF]|^)_.+?_([^A-Za-z0-9_\u0400-\u04FF]|$)/,
     symbol: '_',
     length: 1,
-    changeToStart: '<i>',
-    changeToEnd: '</i>',
+    changeToStart: {ansi: '\x1B[3m', html: '<i>' },
+    changeToEnd: { ansi: '\x1B[23m', html: '</i>' },
     nestedTag: false
   },
   {
     regExp: /([^A-Za-z0-9_\u0400-\u04FF]|^)`.+?`([^A-Za-z0-9_\u0400-\u04FF]|$)/,
     symbol: '`',
     length: 1,
-    changeToStart: '<tt>',
-    changeToEnd: '</tt>',
+    changeToStart: { ansi: '\x1B[7m', html: '<tt>' },
+    changeToEnd: { ansi: '\x1B[27m', html: '</tt>' },
     nestedTag: false
   },
 ];
@@ -68,7 +68,7 @@ const isInvalidTags = (data) => {
 
 const deleteInternalSymbols = (data, symbols) => data.split(' ').map(word => word.replace(symbols, '')).join(' ');
 
-const convert = (data) => {
+const convert = (data, mode) => {
   for (const regExp of regExpes) {
     let match;
     while ((match = data.match(regExp.regExp)) != null) {
@@ -85,7 +85,7 @@ const convert = (data) => {
         err.code = 406;
         throw err;
       }
-      data = data.slice(0, midx) + regExp.changeToStart + formatedData + regExp.changeToEnd + data.slice(endIdx + regExp.length * 2); 
+      data = data.slice(0, midx) + regExp.changeToStart[mode] + formatedData + regExp.changeToEnd[mode] + data.slice(endIdx + regExp.length * 2); 
     }
   }
   if (isInvalidTags(data)) {
@@ -94,7 +94,7 @@ const convert = (data) => {
     throw err;
   }
   data = deleteInternalSymbols(data, '~a');
-  data = addParagrapgs(data);
+  if (mode === 'html') data = addParagrapgs(data);
   return data;
 };
 
