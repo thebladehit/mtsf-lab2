@@ -8,7 +8,10 @@ const regExpes = [
     changeToStart: { ansi: '\x1B[7m', html: '<pre>' },
     changeToEnd: { ansi: '\x1B[27m', html: '</pre>' },
     nestedTag: true,
-    fn: (data) => data.split(' ').map(word => '~a' + word).join(' ')
+    fn: (data) => {
+      preData.push(data);
+      return '~!!!~';
+    }
   },
   {
     regExp: /([^A-Za-z0-9_\u0400-\u04FF*_`]|^)\*\*.+?\*\*([^A-Za-z0-9_\u0400-\u04FF*_`]|$)/u,
@@ -42,6 +45,8 @@ const regExpesError = [
   /(^|\s)`\w+/
 ];
 
+const preData = [];
+
 const availableModes = ['html', 'ansi'];
 
 const isValidMode = (mode) => availableModes.includes(mode);
@@ -49,7 +54,7 @@ const isValidMode = (mode) => availableModes.includes(mode);
 const addParagrapgs = (data) => {
   data = '<p>' + data;
   let idx;
-  while ((idx = data.indexOf('\n\n')) != -1) {
+  while ((idx = data.indexOf('\n\n')) != -1 || (idx = data.indexOf('\r\n')) != -1) {
     data = data.slice(0, idx) + '</p><p>' + data.slice(idx + 1);
   }
   data = data + '</p>';
@@ -70,7 +75,12 @@ const isInvalidTags = (data) => {
   return false;
 };
 
-const deleteInternalSymbols = (data, symbols) => data.split(' ').map(word => word.replace(symbols, '')).join(' ');
+const deleteInternalSymbols = (data, symbols) => {
+  while (preData.length) {
+    data = data.replace(symbols, preData.pop());
+  }
+  return data;
+};
 
 const convert = (data, mode) => {
   if (!isValidMode(mode)) {
@@ -102,8 +112,8 @@ const convert = (data, mode) => {
     err.code = 406;
     throw err;
   }
-  data = deleteInternalSymbols(data, '~a');
   if (mode === 'html') data = addParagrapgs(data);
+  data = deleteInternalSymbols(data, '~!!!~');
   return data;
 };
 
